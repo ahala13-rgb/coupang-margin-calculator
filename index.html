@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1f7a45">
+<link rel="manifest" href="manifest.webmanifest">
+<title>쿠팡 마진 계산기</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,"Noto Sans KR",sans-serif;background:#f4f7f5;color:#18231c}
+header{background:#1f7a45;color:#fff;padding:18px 16px;position:sticky;top:0;z-index:5}
+h1{margin:0;font-size:22px}.sub{opacity:.9;font-size:13px;margin-top:5px}
+main{max-width:760px;margin:auto;padding:14px}
+.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 2px 10px #0000000d}
+h2{font-size:18px;margin:0 0 14px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{font-size:13px;font-weight:700;display:block;margin-bottom:5px}
+input{width:100%;padding:13px;border:1px solid #d7dfd9;border-radius:10px;font-size:16px;background:#fff}
+button{border:0;border-radius:10px;padding:13px 15px;font-size:15px;font-weight:700;cursor:pointer}
+.primary{background:#1f7a45;color:#fff;width:100%;margin-top:12px}.secondary{background:#eaf3ed;color:#1f7a45}
+.result{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.result .box{background:#f4f8f5;border-radius:12px;padding:13px}.k{font-size:12px;color:#637168}.v{font-size:21px;font-weight:800;margin-top:4px}
+.good{color:#1f7a45}.bad{color:#c0392b}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:9px 5px;border-bottom:1px solid #edf0ee;text-align:right}th:first-child,td:first-child{text-align:left}
+.note{font-size:12px;color:#69756d;line-height:1.5;margin-top:9px}
+.row-actions{display:flex;gap:8px;margin-top:10px}.row-actions button{flex:1}
+@media(max-width:520px){.grid{grid-template-columns:1fr}.result{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<header><h1>🍇 쿠팡 마진 계산기</h1><div class="sub">미라클 마진 계산기 기준 · 휴대폰/PC에서 사용</div></header>
+<main>
+<section class="card">
+<h2>1. 상품 마진 계산</h2>
+<div class="grid">
+<div><label>상품명</label><input id="name" placeholder="예: 샤인머스켓"></div>
+<div><label>원가(원)</label><input id="cost" type="number" inputmode="decimal" placeholder="10000"></div>
+<div><label>판매가(원)</label><input id="price" type="number" inputmode="decimal" placeholder="20000"></div>
+<div><label>쿠팡 상품 수수료(%)</label><input id="fee" type="number" step="0.1" value="10.6"></div>
+</div>
+<button class="primary" onclick="calc()">마진 계산하기</button>
+<div class="result">
+<div class="box"><div class="k">부가세</div><div class="v" id="vat">0원</div></div>
+<div class="box"><div class="k">예상 순수익</div><div class="v good" id="profit">0원</div></div>
+<div class="box"><div class="k">최종 마진율</div><div class="v" id="margin">0%</div></div>
+<div class="box"><div class="k">수수료+부가세</div><div class="v" id="totalfee">0%</div></div>
+</div>
+<div class="row-actions"><button class="secondary" onclick="saveItem()">상품 저장</button><button class="secondary" onclick="clearInputs()">초기화</button></div>
+<div class="note">원본 엑셀의 계산식: 예상 순수익 = (판매가−원가) − 판매가×(상품수수료+부가세), 부가세 = 상품수수료의 10%.</div>
+</section>
+
+<section class="card">
+<h2>2. 경쟁 판매가 → 목표 소싱가</h2>
+<div class="grid">
+<div><label>A 경쟁가</label><input id="a" type="number"></div>
+<div><label>B 경쟁가</label><input id="b" type="number"></div>
+<div><label>C 경쟁가</label><input id="c" type="number"></div>
+<div><label>D 경쟁가</label><input id="d" type="number"></div>
+</div>
+<button class="primary" onclick="competitive()">평균가 계산하기</button>
+<div class="result">
+<div class="box"><div class="k">경쟁 판매가 평균</div><div class="v" id="avg">0원</div></div>
+<div class="box"><div class="k">목표 소싱가(평균×66%)</div><div class="v good" id="target">0원</div></div>
+</div>
+<div class="note">원본 엑셀의 경쟁 판매가 영역에서 A~D 평균을 내고 평균가의 66%를 목표 소싱가로 계산하도록 반영했습니다.</div>
+</section>
+
+<section class="card">
+<h2>3. 빠른 판매가 계산</h2>
+<div class="grid">
+<div><label>원가(원)</label><input id="quickCost" type="number" placeholder="10000"></div>
+<div><label>판매 배수</label><input id="mult" type="number" step="0.1" value="1.5"></div>
+</div>
+<button class="primary" onclick="quickCalc()">판매가 계산</button>
+<div class="result"><div class="box"><div class="k">계산 판매가</div><div class="v" id="quickPrice">0원</div></div></div>
+<div class="note">원본 엑셀의 상품별 빠른 계산 예시(원가×1.5)를 반영했습니다. 실제 쿠팡 수익은 위의 마진 계산에서 수수료까지 확인하세요.</div>
+</section>
+
+<section class="card">
+<h2>저장한 상품</h2>
+<table><thead><tr><th>상품</th><th>원가</th><th>판매가</th><th>순수익</th><th>마진율</th></tr></thead><tbody id="saved"></tbody></table>
+<div class="row-actions"><button class="secondary" onclick="clearSaved()">저장 목록 삭제</button></div>
+</section>
+</main>
+<script>
+const won=n=>Math.round(n||0).toLocaleString('ko-KR')+'원';
+const pct=n=>(n||0).toFixed(1)+'%';
+function calc(){
+ const c=+document.querySelector('#cost').value||0,p=+document.querySelector('#price').value||0,f=(+document.querySelector('#fee').value||0)/100;
+ const vatRate=f/10, profit=(p-c)-(p*(f+vatRate)), margin=p?profit/p:0;
+ document.querySelector('#vat').textContent=won(p*vatRate);
+ document.querySelector('#profit').textContent=won(profit);
+ document.querySelector('#profit').className='v '+(profit>=0?'good':'bad');
+ document.querySelector('#margin').textContent=pct(margin*100);
+ document.querySelector('#margin').className='v '+(margin>=0?'good':'bad');
+ document.querySelector('#totalfee').textContent=pct((f+vatRate)*100);
+}
+function competitive(){
+ const xs=['a','b','c','d'].map(id=>+document.getElementById(id).value).filter(x=>x>0);
+ const avg=xs.length?xs.reduce((a,b)=>a+b,0)/xs.length:0;
+ document.getElementById('avg').textContent=won(avg);
+ document.getElementById('target').textContent=won(avg*.66);
+}
+function quickCalc(){document.getElementById('quickPrice').textContent=won((+quickCost.value||0)*(+mult.value||0))}
+function saveItem(){
+ calc();
+ const item={name:name.value||'상품',cost:+cost.value||0,price:+price.value||0,profit:0,margin:0};
+ const f=(+fee.value||0)/100, vat=f/10; item.profit=(item.price-item.cost)-(item.price*(f+vat)); item.margin=item.price?item.profit/item.price:0;
+ const arr=JSON.parse(localStorage.getItem('marginItems')||'[]');arr.unshift(item);localStorage.setItem('marginItems',JSON.stringify(arr.slice(0,50)));render();
+}
+function render(){
+ const arr=JSON.parse(localStorage.getItem('marginItems')||'[]');
+ saved.innerHTML=arr.map(x=>`<tr><td>${esc(x.name)}</td><td>${won(x.cost)}</td><td>${won(x.price)}</td><td>${won(x.profit)}</td><td>${pct(x.margin*100)}</td></tr>`).join('');
+}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function clearInputs(){['name','cost','price'].forEach(id=>document.getElementById(id).value='');fee.value='10.6';['vat','profit','margin','totalfee'].forEach(id=>document.getElementById(id).textContent=id==='totalfee'?'0%':'0원')}
+function clearSaved(){if(confirm('저장 목록을 모두 삭제할까요?')){localStorage.removeItem('marginItems');render()}}
+render();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+</body></html>
